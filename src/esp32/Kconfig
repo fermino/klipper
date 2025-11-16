@@ -136,14 +136,14 @@ menu "Shift register output configuration"
     config SR_PIN_DATA
         int "Data pin"
         range 0 48
-        default 5
+        default 27
     config SR_PIN_CLK
         int "Clock pin"
-        range 0 48
+        range 0 25
         default 6
     config SR_PIN_LATCH
         int "Latch pin"
-        range 0 48
+        range 0 26
         default 7
 endmenu
 
