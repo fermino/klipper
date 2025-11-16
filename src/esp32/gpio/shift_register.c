@@ -21,12 +21,11 @@
 // @todo check max
 DECL_ENUMERATION_RANGE("pin", "SR_0", (1u << 7), SR_BIT_NO);
 
-spi_dev_t* spi = NULL;
-volatile static uint8_t sr_data[CONFIG_SR_BYTE_NO];
+volatile uint8_t sr_data[CONFIG_SR_BYTE_NO];
 
 void sr_init()
 {
-    spi = SPI_LL_GET_HW(SR_SPI_HOST);
+    spi_dev_t* spi = SPI_LL_GET_HW(SR_SPI_HOST);
 
     /**
      * Enable state machine clocks and reset everything
@@ -89,7 +88,7 @@ void sr_init()
     for (uint8_t i = 0; i < CONFIG_SR_BYTE_NO; i++) {
         sr_data[i] = 0;
     }
-    sr_write();
+    gpio_sr_shift_out();
 
 
     struct gpio_out gp = { .pin = 128 };
@@ -110,28 +109,16 @@ DECL_INIT(sr_init);
 
 // @todo Critical section? noirq?
 // @todo check if transfer finished
-void sr_write()
+// @todo inline?
+void gpio_sr_shift_out()
 {
     uint8_t local_buffer[CONFIG_SR_BYTE_NO];
     for (uint8_t i = 0; i < CONFIG_SR_BYTE_NO; i++) {
         local_buffer[i] = sr_data[CONFIG_SR_BYTE_NO - 1 - i];
     }
-    spi_ll_write_buffer(spi, local_buffer, SR_BIT_NO);
-    spi_ll_user_start(spi);
-}
-
-void gpio_sr_write(struct gpio gpio, bool val)
-{
-    uint8_t bit_index = gpio.pin & 0b111;
-    uint8_t byte_index = (gpio.pin & 0b01111000) >> 3;
-
-    if (val) {
-        sr_data[byte_index] |= 1 << bit_index;
-    } else {
-        sr_data[byte_index] &= ~(1 << bit_index);
-    }
-
-    sr_write();
+    spi_ll_write_buffer(SPI_LL_GET_HW(SR_SPI_HOST), local_buffer, SR_BIT_NO);
+    // @todo write byte might be more efficient
+    spi_ll_user_start(SPI_LL_GET_HW(SR_SPI_HOST));
 }
 
 #endif
