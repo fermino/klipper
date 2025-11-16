@@ -1,27 +1,15 @@
 #include "gpio/shift_register.h"
 #include "autoconf.h"
 #include "command.h"
-#include "esp_clk_tree.h"
-#include "esp_log.h"
-#include "esp_private/periph_ctrl.h"
 #include "esp_private/spi_common_internal.h"
 #include "hal/clk_tree_hal.h"
-#include "hal/spi_flash_ll.h"
-#include "hal/spi_hal.h"
 #include "hal/spi_ll.h"
 
 #if CONFIG_HAVE_GPIO_SR
 
-// @todo clause
+DECL_ENUMERATION_RANGE("pin", "SR0", (1u << 7), SR_BIT_NO);
 
-#define SR_SPI_HOST (SPI2_HOST)
-#define SR_BIT_NO   (CONFIG_SR_BYTE_NO * 8)
-
-// @todo -1?
-// @todo check max
-DECL_ENUMERATION_RANGE("pin", "SR_0", (1u << 7), SR_BIT_NO);
-
-volatile uint8_t sr_data[CONFIG_SR_BYTE_NO];
+volatile uint8_t sr_data[CONFIG_SR_BYTE_NO] = {0};
 
 void sr_init()
 {
@@ -85,40 +73,8 @@ void sr_init()
     spi_ll_apply_config(spi);
 
     // Initial write to the SR to set it to a known state
-    for (uint8_t i = 0; i < CONFIG_SR_BYTE_NO; i++) {
-        sr_data[i] = 0;
-    }
     gpio_sr_shift_out();
-
-
-    struct gpio_out gp = { .pin = 128 };
-    struct gpio_out gp2 = { .pin = 141 };
-
-    while (1) {
-        gpio_sr_write(gp, 1);
-        esp_rom_delay_us(5);
-        gpio_sr_write(gp2, 0);
-        esp_rom_delay_us(5);
-        gpio_sr_write(gp, 0);
-        esp_rom_delay_us(5);
-        gpio_sr_write(gp2, 1);
-        esp_rom_delay_us(5);
-    }
 }
 DECL_INIT(sr_init);
-
-// @todo Critical section? noirq?
-// @todo check if transfer finished
-// @todo inline?
-void gpio_sr_shift_out()
-{
-    uint8_t local_buffer[CONFIG_SR_BYTE_NO];
-    for (uint8_t i = 0; i < CONFIG_SR_BYTE_NO; i++) {
-        local_buffer[i] = sr_data[CONFIG_SR_BYTE_NO - 1 - i];
-    }
-    spi_ll_write_buffer(SPI_LL_GET_HW(SR_SPI_HOST), local_buffer, SR_BIT_NO);
-    // @todo write byte might be more efficient
-    spi_ll_user_start(SPI_LL_GET_HW(SR_SPI_HOST));
-}
 
 #endif
