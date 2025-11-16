@@ -9,20 +9,26 @@ void gpio_out_reset(struct gpio_out gpio, uint_fast8_t val);
 
 static inline void __attribute__((always_inline)) gpio_out_write(struct gpio_out gpio, uint_fast8_t val)
 {
+#if CONFIG_HAVE_GPIO_SR
     if (gpio_is_sr(gpio)) {
         gpio_sr_write(gpio, val);
-    } else {
-        gpio_ll_set_level(GPIO_LL_GET_HW(GPIO_PORT_0), gpio.pin, val);
+        return;
     }
+#endif
+
+    gpio_ll_set_level(GPIO_LL_GET_HW(GPIO_PORT_0), gpio.pin, val);
 }
 
 static inline void __attribute__((always_inline)) gpio_out_toggle_noirq(struct gpio_out gpio)
 {
+#if CONFIG_HAVE_GPIO_SR
     if (gpio_is_sr(gpio)) {
         gpio_sr_write(gpio, !gpio_sr_read(gpio));
-    } else {
-        gpio_out_write(gpio, !gpio_ll_get_level(GPIO_LL_GET_HW(GPIO_PORT_0), gpio.pin));
+        return;
     }
+#endif
+
+    gpio_out_write(gpio, !gpio_ll_get_level(GPIO_LL_GET_HW(GPIO_PORT_0), gpio.pin));
 }
 
 static inline void __attribute__((always_inline)) gpio_out_toggle(struct gpio_out gpio)

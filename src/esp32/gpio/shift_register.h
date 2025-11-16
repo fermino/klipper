@@ -6,20 +6,10 @@
 #include <stdint.h>
 #include "hal/spi_ll.h"
 
-#define SR_BIT_NO   (CONFIG_SR_BYTE_NO * 8)
-
-/**
- * This function should be optimized out if the feature is
- * disabled (CONFIG_HAVE_GPIO_SR == false)
- */
-static inline bool __attribute__((always_inline)) gpio_is_sr(struct gpio_out gpio)
-{
-    return CONFIG_HAVE_GPIO_SR && (gpio.pin & 0b10000000) && (gpio.pin & 0b01111111) < SR_BIT_NO;
-}
-
 #if CONFIG_HAVE_GPIO_SR
 
 #define SR_SPI_HOST (SPI2_HOST)
+#define SR_BIT_NO   (CONFIG_SR_BYTE_NO * 8)
 
 // @todo Critical section? noirq?
 // @todo check if transfer finished
@@ -35,6 +25,15 @@ static inline void __attribute__((always_inline)) gpio_sr_shift_out()
     spi_ll_write_buffer(SPI_LL_GET_HW(SR_SPI_HOST), local_buffer, SR_BIT_NO);
     // @todo write byte might be more efficient
     spi_ll_user_start(SPI_LL_GET_HW(SR_SPI_HOST));
+}
+
+/**
+ * This function should be optimized out if the feature is
+ * disabled (CONFIG_HAVE_GPIO_SR == false)
+ */
+static inline bool __attribute__((always_inline)) gpio_is_sr(struct gpio_out gpio)
+{
+    return CONFIG_HAVE_GPIO_SR && (gpio.pin & 0b10000000) && (gpio.pin & 0b01111111) < SR_BIT_NO;
 }
 
 static inline uint8_t __attribute__((always_inline)) gpio_sr_bit_index(struct gpio_out gpio)
