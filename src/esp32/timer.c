@@ -63,6 +63,7 @@ void timer_init()
      */
     esp_rom_route_intr_matrix(0, TIMER_CCOMP_INTR_SRC, TIMER_CCOMP_INTR_NO);
     esp_cpu_intr_set_handler(TIMER_CCOMP_INTR_NO, timer_isr, NULL);
+    //esp_cpu_intr_set_priority(TIMER_CCOMP_INTR_NO, ESP_INTR_FLAG_LEVEL3);
 
     // Sometimes the registers end up in an unsafe state so we'll reset them
     XTHAL_SET_CCOUNT(0);
