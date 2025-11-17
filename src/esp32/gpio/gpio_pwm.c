@@ -5,9 +5,13 @@
 #include "driver/ledc.h"
 
 /**
- * The LEDC peripheral has 4 low speed timers that are then muxed to 8
+ * The LEDC peripheral has 4 "low speed" timers that are then muxed to 8
  * channels. This function assigns a timer to the caller to avoid having
- * two timers with equal configuration, then sets it up.
+ * two timers with equal configuration, then sets it up. Keep in mind that
+ * in this context, "low speed" does not indicate a frequency limit but
+ * rather the steps required to refresh the configuration after a change.
+ *
+ * https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/ledc.html
  */
 static ledc_timer_t setup_timer(uint32_t frequency)
 {
