@@ -13,6 +13,10 @@ set(SOURCES
     ${KLIPPER_ROOT}/src/esp32/serial.c
     ${KLIPPER_ROOT}/src/esp32/timer.c
 
+    # gpio(pwm)
+    ${KLIPPER_ROOT}/src/esp32/gpio/gpio_pwm.c
+    ${KLIPPER_ROOT}/src/pwmcmds.c
+
         #    # Klipper sources
 #    ${KLIPPER_ROOT}/src/adccmds.c
     ${KLIPPER_ROOT}/src/basecmd.c
@@ -28,7 +32,6 @@ set(SOURCES
 #    ${KLIPPER_ROOT}/src/lcd_st7920.c
 #    ${KLIPPER_ROOT}/src/neopixel.c
 #    ${KLIPPER_ROOT}/src/pulse_counter.c
-#    ${KLIPPER_ROOT}/src/pwmcmds.c
     ${KLIPPER_ROOT}/src/sched.c
 #    ${KLIPPER_ROOT}/src/sensor_adxl345.c
 #    ${KLIPPER_ROOT}/src/sensor_angle.c

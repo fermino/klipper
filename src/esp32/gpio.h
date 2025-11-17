@@ -2,21 +2,16 @@
 
 #include <stdint.h>
 
+// ReSharper disable CppUnusedIncludeDirective
 #include "gpio/gpio.h"
-// ReSharper disable once CppUnusedIncludeDirective
 #include "gpio/gpio_out.h"
-// ReSharper disable once CppUnusedIncludeDirective
 #include "gpio/gpio_in.h"
+#include "gpio/gpio_pwm.h"
+// ReSharper restore CppUnusedIncludeDirective
 
 /**
  * @todo OTHERSADASDASDS
  */
-struct gpio_pwm {
-    void *reg;
-    uint8_t size8;
-};
-struct gpio_pwm gpio_pwm_setup(uint8_t pin, uint32_t cycle_time, uint8_t val);
-void gpio_pwm_write(struct gpio_pwm g, uint8_t val);
 
 struct gpio_adc {
     uint8_t chan;
