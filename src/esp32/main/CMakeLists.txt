@@ -17,8 +17,10 @@ set(SOURCES
     ${KLIPPER_ROOT}/src/esp32/gpio/gpio_pwm.c
     ${KLIPPER_ROOT}/src/pwmcmds.c
 
-        #    # Klipper sources
-#    ${KLIPPER_ROOT}/src/adccmds.c
+    # gpio(adc)
+    ${KLIPPER_ROOT}/src/esp32/gpio/gpio_adc.c
+    ${KLIPPER_ROOT}/src/adccmds.c
+
     ${KLIPPER_ROOT}/src/basecmd.c
 #    ${KLIPPER_ROOT}/src/buttons.c
     ${KLIPPER_ROOT}/src/command.c
