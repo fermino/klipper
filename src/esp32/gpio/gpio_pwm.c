@@ -76,7 +76,7 @@ static ledc_channel_t setup_channel(ledc_timer_t timer, uint8_t pin, uint8_t dut
 /**
  * Set up a PWM pin. The max number of channels (pins) is 8, the max number of
  * timers (different frequencies) is 4.
- * @todo see https://github.com/fermino/klipper-esp32-port/issues/15, it should be fixed here too
+ * @todo see https://github.com/fermino/klipper-esp32-port/issues/16, it should be fixed here too
  */
 struct gpio_pwm gpio_pwm_setup(uint8_t pin, uint32_t cycle_time, uint8_t val)
 {
