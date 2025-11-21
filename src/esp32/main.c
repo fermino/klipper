@@ -1,5 +1,4 @@
 #include "main.h"
-
 #include "command.h"
 #include "esp_private/startup_internal.h"
 #include "esp_private/system_internal.h"
@@ -16,7 +15,7 @@ ESP_SYSTEM_INIT_FN(main_core0, SECONDARY, BIT(0), 1000)
     esp_rom_delay_us(500 * 1000);
 
     sched_main();
-    try_shutdown("Main stopped.");
+    shutdown("Main stopped.");
     esp_restart_noos();
 }
 
