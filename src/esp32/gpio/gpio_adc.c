@@ -1,14 +1,13 @@
 #include "gpio/gpio_adc.h"
 #include "command.h"
+#include "generic/misc.h"
 #include "esp_clk_tree.h"
+#include "esp_private/adc_private.h"
 #include "esp_private/gpio.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
-#include "generic/misc.h"
 #include "hal/adc_ll.h"
 #include "hal/adc_oneshot_hal.h"
-#include "soc/adc_periph.h"
-
 
 /**
  * The current implementation does not support the ADC in RISC-V cores because
@@ -22,32 +21,31 @@
 #   error "Klipper's ESP32 ADC implementation does not support RISC-V cores due to clock configuration differences. You're welcome to port it :)"
 #endif
 
-#define ADC_LL_EVENT_ONESHOT_DONE_FROM_UNIT(unit) ((unit) == ADC_UNIT_1 ? ADC_LL_EVENT_ADC1_ONESHOT_DONE : ADC_LL_EVENT_ADC2_ONESHOT_DONE)
+#define ADC_UNIT_TO_EVENT_ONESHOT_DONE(unit) ((unit) == ADC_UNIT_1 ? ADC_LL_EVENT_ADC1_ONESHOT_DONE : ADC_LL_EVENT_ADC2_ONESHOT_DONE)
 
 /**
  * Init the ADC units. Different ESP variants have different amounts of ADC
- * units (1 or 2). Here we start all of them so that all the channels are
- * available if needed.
+ * units (1 or 2). Here we initialize all of them so that all the channels are
+ * available if needed. Be aware that in some cases the ADC2 is shared with
+ * the radio, which should not be an issue with Klipper, but if it ever
+ * happens to be it should be handled accordingly.
  */
 static adc_oneshot_hal_ctx_t adc_hal[SOC_ADC_PERIPH_NUM];
 void adc_init()
 {
-    uint32_t clk_src_freq_hz = 0;
-    esp_clk_tree_src_get_freq_hz(
-        ADC_DIGI_CLK_SRC_DEFAULT,
-        ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
-        &clk_src_freq_hz
-    );
+    uint32_t clk_src_freq_hz;
+    if (esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &clk_src_freq_hz) != ESP_OK) {
+        shutdown("ADC: could not get clock frequency.");
+    }
 
     for (uint8_t i = 0; i < SOC_ADC_PERIPH_NUM; i++) {
-        adc_oneshot_hal_init(&adc_hal[i], &(adc_oneshot_hal_cfg_t) {
-            .unit = i,
-            .clk_src = ADC_DIGI_CLK_SRC_DEFAULT,
-            .clk_src_freq_hz = clk_src_freq_hz,
-            .work_mode = ADC_HAL_SINGLE_READ_MODE,
-        });
-        sar_periph_ctrl_adc_oneshot_power_acquire();
+        adc_hal[i].unit = i;
+        adc_hal[i].work_mode = ADC_HAL_SINGLE_READ_MODE;
+        adc_hal[i].clk_src = ADC_DIGI_CLK_SRC_DEFAULT;
+        adc_hal[i].clk_src_freq_hz = clk_src_freq_hz;
     }
+
+    sar_periph_ctrl_adc_oneshot_power_acquire();
 }
 DECL_INIT(adc_init);
 
@@ -63,31 +61,28 @@ DECL_INIT(adc_init);
  * a range of around 0-3V.
  *
  * @todo: use ADC calibration
- * @todo add esp error checks
- * @todo DISABLE IRQ
+ * @todo DISABLE IRQ (everywhere)
  */
 DECL_CONSTANT("ADC_MAX", 1023);
 struct gpio_adc gpio_adc_setup(uint8_t pin)
 {
-    for (uint8_t i = 0; i < SOC_ADC_PERIPH_NUM; i++) {
-        for (uint8_t j = 0; j < SOC_ADC_MAX_CHANNEL_NUM; j++) {
-            if (adc_channel_io_map[i][j] == pin) {
-                struct gpio_adc gpio = {
-                    .adc_unit = i,
-                    .adc_channel = j,
-                };
-
-                gpio_config_as_analog(pin);
-
-                adc_hal[gpio.adc_unit].chan_configs[gpio.adc_channel].atten = ADC_ATTEN_DB_12;
-                adc_hal[gpio.adc_unit].chan_configs[gpio.adc_channel].bitwidth = ADC_BITWIDTH_10;
-
-                return gpio;
-            }
-        }
+    adc_unit_t unit;
+    adc_channel_t channel;
+    if (adc_io_to_channel(pin, &unit, &channel) != ESP_OK) {
+        shutdown("ADC pin is not a valid ADC channel.");
     }
 
-    shutdown("ADC pin is not a valid ADC channel.");
+    if (gpio_config_as_analog(pin) != ESP_OK) {
+        shutdown("ADC: could not configure pin as analog input");
+    }
+
+    adc_hal[unit].chan_configs[channel].atten = ADC_ATTEN_DB_12;
+    adc_hal[unit].chan_configs[channel].bitwidth = ADC_BITWIDTH_10;
+
+    return (struct gpio_adc) {
+        .adc_unit = unit,
+        .adc_channel = channel,
+    };
 }
 
 /**
@@ -105,15 +100,13 @@ uint32_t gpio_adc_sample(struct gpio_adc gpio)
 {
     /**
      * If there is no conversion running, start one and save the status to
-     * our FSM. The usual conversion time in an ESP32 is around 13us
-     * (anecdotical evidence), so 15us should be enough so that the next call
-     * to this function returns 0.
+     * our FSM. Then, return the time in which the conversion should be ready.
      */
     if (running_conversion_pin == -1) {
         adc_oneshot_hal_setup(&adc_hal[gpio.adc_unit], gpio.adc_channel);
         adc_oneshot_ll_start(gpio.adc_unit);
         running_conversion_pin = adc_channel_io_map[gpio.adc_unit][gpio.adc_channel];
-        return timer_from_us(15);
+        return timer_from_us(1);
     }
 
     /**
@@ -123,10 +116,10 @@ uint32_t gpio_adc_sample(struct gpio_adc gpio)
      * finish.
      */
     if (running_conversion_pin == adc_channel_io_map[gpio.adc_unit][gpio.adc_channel]) {
-        if (adc_oneshot_ll_get_event(ADC_LL_EVENT_ONESHOT_DONE_FROM_UNIT(gpio.adc_unit))) {
+        if (adc_oneshot_ll_get_event(ADC_UNIT_TO_EVENT_ONESHOT_DONE(gpio.adc_unit))) {
             return 0;
         }
-        return timer_from_us(5);
+        return timer_from_us(1);
     }
 
     /**
@@ -147,7 +140,7 @@ uint16_t gpio_adc_read(struct gpio_adc gpio)
     if (running_conversion_pin == -1) {
         shutdown("ADC: no conversion has been started.");
     }
-    if (!adc_oneshot_ll_get_event(ADC_LL_EVENT_ONESHOT_DONE_FROM_UNIT(gpio.adc_unit))) {
+    if (!adc_oneshot_ll_get_event(ADC_UNIT_TO_EVENT_ONESHOT_DONE(gpio.adc_unit))) {
         shutdown("ADC: conversion has not finished yet.");
     }
 
@@ -165,8 +158,9 @@ void gpio_adc_cancel_sample(struct gpio_adc gpio)
         shutdown("ADC: there is no conversion running.");
     }
 
-    while (gpio_adc_sample(gpio) != 0) {
-        // Wait until the conversion has finished
-    }
+    // Wait until the conversion has finished
+    while (gpio_adc_sample(gpio) != 0) {}
+
+    // Reset the FSM
     gpio_adc_read(gpio);
 }
