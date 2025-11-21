@@ -2,16 +2,25 @@
 get_filename_component(KLIPPER_ROOT "../../.." ABSOLUTE)
 
 set(SOURCES
-    # @todo: desglosar en básicos para bootstrap, esp32 y adicionales
-    # ESP32 sources
+    # Core
     ${KLIPPER_ROOT}/src/esp32/main.c
+    ${KLIPPER_ROOT}/src/esp32/timer.c
+    ${KLIPPER_ROOT}/src/esp32/irq.c
+    ${KLIPPER_ROOT}/src/sched.c
+
+    # Host communication
+    ${KLIPPER_ROOT}/src/esp32/serial.c
+
+    # gpio
     ${KLIPPER_ROOT}/src/esp32/gpio/gpio.c
+    ${KLIPPER_ROOT}/src/gpiocmds.c
+
+    # gpio(in)
     ${KLIPPER_ROOT}/src/esp32/gpio/gpio_in.c
+
+    # gpio(out)
     ${KLIPPER_ROOT}/src/esp32/gpio/gpio_out.c
     ${KLIPPER_ROOT}/src/esp32/gpio/shift_register.c
-    ${KLIPPER_ROOT}/src/esp32/irq.c
-    ${KLIPPER_ROOT}/src/esp32/serial.c
-    ${KLIPPER_ROOT}/src/esp32/timer.c
 
     # gpio(pwm)
     ${KLIPPER_ROOT}/src/esp32/gpio/gpio_pwm.c
@@ -21,12 +30,19 @@ set(SOURCES
     ${KLIPPER_ROOT}/src/esp32/gpio/gpio_adc.c
     ${KLIPPER_ROOT}/src/adccmds.c
 
+    # Generic stuff
     ${KLIPPER_ROOT}/src/basecmd.c
-#    ${KLIPPER_ROOT}/src/buttons.c
     ${KLIPPER_ROOT}/src/command.c
+    ${KLIPPER_ROOT}/src/trsync.c
+    ${KLIPPER_ROOT}/src/generic/alloc.c
+    ${KLIPPER_ROOT}/src/generic/crc16_ccitt.c
+    ${KLIPPER_ROOT}/src/generic/serial_irq.c
+    ${KLIPPER_ROOT}/src/generic/timer_irq.c
+    ${KLIPPER_ROOT}/src/stepper.c
+
+#    ${KLIPPER_ROOT}/src/buttons.c
 #    ${KLIPPER_ROOT}/src/debugcmds.c
 #    ${KLIPPER_ROOT}/src/endstop.c
-    ${KLIPPER_ROOT}/src/gpiocmds.c
 #    ${KLIPPER_ROOT}/src/i2ccmds.c
 #    ${KLIPPER_ROOT}/src/i2c_software.c
 #    ${KLIPPER_ROOT}/src/initial_pins.c
@@ -34,7 +50,6 @@ set(SOURCES
 #    ${KLIPPER_ROOT}/src/lcd_st7920.c
 #    ${KLIPPER_ROOT}/src/neopixel.c
 #    ${KLIPPER_ROOT}/src/pulse_counter.c
-    ${KLIPPER_ROOT}/src/sched.c
 #    ${KLIPPER_ROOT}/src/sensor_adxl345.c
 #    ${KLIPPER_ROOT}/src/sensor_angle.c
 #    ${KLIPPER_ROOT}/src/sensor_bulk.c
@@ -43,14 +58,8 @@ set(SOURCES
 #    ${KLIPPER_ROOT}/src/sensor_mpu9250.c
 #    ${KLIPPER_ROOT}/src/spicmds.c
 #    ${KLIPPER_ROOT}/src/spi_software.c
-    ${KLIPPER_ROOT}/src/stepper.c
 #    ${KLIPPER_ROOT}/src/thermocouple.c
 #    ${KLIPPER_ROOT}/src/tmcuart.c
-    ${KLIPPER_ROOT}/src/trsync.c
-    ${KLIPPER_ROOT}/src/generic/alloc.c
-    ${KLIPPER_ROOT}/src/generic/crc16_ccitt.c
-    ${KLIPPER_ROOT}/src/generic/serial_irq.c
-    ${KLIPPER_ROOT}/src/generic/timer_irq.c
 )
 
 idf_component_register(
