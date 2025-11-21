@@ -6,7 +6,6 @@ set(SOURCES
     ${KLIPPER_ROOT}/src/esp32/main.c
     ${KLIPPER_ROOT}/src/esp32/timer.c
     ${KLIPPER_ROOT}/src/esp32/irq.c
-    ${KLIPPER_ROOT}/src/sched.c
 
     # Host communication
     ${KLIPPER_ROOT}/src/esp32/serial.c
@@ -32,20 +31,21 @@ set(SOURCES
 
     # Generic stuff
     ${KLIPPER_ROOT}/src/basecmd.c
+    ${KLIPPER_ROOT}/src/buttons.c
     ${KLIPPER_ROOT}/src/command.c
-    ${KLIPPER_ROOT}/src/trsync.c
+    ${KLIPPER_ROOT}/src/debugcmds.c
+    ${KLIPPER_ROOT}/src/endstop.c
     ${KLIPPER_ROOT}/src/generic/alloc.c
     ${KLIPPER_ROOT}/src/generic/crc16_ccitt.c
     ${KLIPPER_ROOT}/src/generic/serial_irq.c
     ${KLIPPER_ROOT}/src/generic/timer_irq.c
+    ${KLIPPER_ROOT}/src/initial_pins.c
+    ${KLIPPER_ROOT}/src/sched.c
     ${KLIPPER_ROOT}/src/stepper.c
+    ${KLIPPER_ROOT}/src/trsync.c
 
-#    ${KLIPPER_ROOT}/src/buttons.c
-#    ${KLIPPER_ROOT}/src/debugcmds.c
-#    ${KLIPPER_ROOT}/src/endstop.c
 #    ${KLIPPER_ROOT}/src/i2ccmds.c
 #    ${KLIPPER_ROOT}/src/i2c_software.c
-#    ${KLIPPER_ROOT}/src/initial_pins.c
 #    ${KLIPPER_ROOT}/src/lcd_hd44780.c
 #    ${KLIPPER_ROOT}/src/lcd_st7920.c
 #    ${KLIPPER_ROOT}/src/neopixel.c
